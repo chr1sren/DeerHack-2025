@@ -169,6 +169,12 @@ def displaySky():
     pygame.display.set_caption("2D Star Map")
     clock = pygame.time.Clock()
 
+    # ---------------------------
+    # Set Icon
+    # ---------------------------
+    app_icon = pygame.image.load('data/icon.png')
+    pygame.display.set_icon(app_icon)
+
     # View parameters (in radians)
     view_ra = 0.0   # Right Ascension (center)
     # view_dec = math.radians(90)  # Declination (center)
