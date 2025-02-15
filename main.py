@@ -1,4 +1,77 @@
-import display_sky
+import pygame
+from config import *
+from star_projection import StarMap
+from render import Renderer
+
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    clock = pygame.time.Clock()
+    
+    # Initialize star projection and renderer
+    star_proj = StarMap()
+    renderer = Renderer(star_proj)
+    
+    # Interaction state variables
+    dragging = False
+    last_pos = (0, 0)
+    drag_sensitivity = 1.2  # Mouse drag-to-pan ratio
+
+    # Enable optimized display flags
+    flags = pygame.DOUBLEBUF | pygame.HWSURFACE  # Double buffering & hardware acceleration
+    screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
+    
+    # Create off-screen buffer for smooth rendering
+    back_buffer = pygame.Surface((WIDTH, HEIGHT))
+
+    running = True
+    while running:
+        # Event processing loop
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                
+            # Mouse event handling
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left mouse button
+                    dragging = True
+                    last_pos = event.pos
+                    renderer.asterism_cache.clear()  # Clear cached asterism paths
+                elif event.button == 4:  # Mouse wheel up (zoom in)
+                    star_proj.scale = max(star_proj.scale * 0.9, star_proj.max_scale)
+                elif event.button == 5:  # Mouse wheel down (zoom out)
+                    star_proj.scale = min(star_proj.scale * 1.1, star_proj.min_scale)
+            
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:  # Left button release
+                    dragging = False
+            
+            elif event.type == pygame.MOUSEMOTION and dragging:
+                # Calculate pan movement
+                dx, dy = event.pos[0] - last_pos[0], event.pos[1] - last_pos[1]
+                last_pos = event.pos
+                
+                # Update view coordinates
+                star_proj.view_ra -= dx * star_proj.scale * drag_sensitivity
+                star_proj.view_dec += dy * star_proj.scale * drag_sensitivity
+                renderer.asterism_cache.clear()  # Invalidate cached paths
+
+        # Rendering pipeline
+        back_buffer.fill(BACKGROUND_COLOR)  # Clear background
+        
+        # Draw celestial elements
+        # renderer.draw_constellation(back_buffer, "Libra")
+        renderer.draw_asterisms(back_buffer)  # Draw constellation lines
+        renderer.draw_stars(back_buffer)      # Draw visible stars
+        # renderer.draw_constellation(back_buffer, "Ursa Major")  # Example constellation
+        
+        # Update display
+        screen.blit(back_buffer, (0, 0))
+        pygame.display.flip()  # Swap buffers
+        
+        clock.tick(60)  # Maintain 60 FPS
+
+    pygame.quit()
 
 if __name__ == "__main__":
-    display_sky.displaySky()    
+    main()

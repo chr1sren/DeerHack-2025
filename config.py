@@ -1,0 +1,6 @@
+# Configuration constants
+WIDTH, HEIGHT = 1200, 600  # 2:1 aspect ratio
+BACKGROUND_COLOR = (0, 0, 0)
+ASTERISM_COLOR = (255, 0, 0)
+CONSTELLATION_COLOR = (100, 100, 255)
+FONT_COLOR = (200, 200, 255)
