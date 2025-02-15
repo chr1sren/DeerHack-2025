@@ -9,14 +9,16 @@ class Renderer:
 
     def draw_asterisms(self, surface):
         scale_inv = 1.0 / self.star_proj.scale
-        cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale*100))
+        cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
         
         if cache_key not in self.asterism_cache:
             asterism_lines = []
-            for _, asterism in self.star_proj.asterisms.iterrows():
-                ras = np.array([float(x)*15 for x in asterism['ra'].strip('[]').split(',')])
-                decs = np.array([float(x) for x in asterism['dec'].strip('[]').split(',')])
+            for index, row in self.star_proj.constellations.iterrows():
+                # Convert the RA and Dec strings into numpy arrays
+                ras = np.array([float(x) * 360 / 24 for x in row['ra'].replace('[', '').replace(']', '').split(',')])
+                decs = np.array([float(x) for x in row['dec'].replace('[', '').replace(']', '').split(',')])
                 
+                # Wrap and sort the RA values
                 wrapped_ras = self.star_proj._wrap_ra(ras)
                 sorted_idx = np.argsort(wrapped_ras)
                 sorted_ras = ras[sorted_idx]
@@ -27,6 +29,7 @@ class Renderer:
                 prev_ra = None
                 max_visible_span = 180 / self.star_proj.scale
                 
+                # Break the constellation line into segments if there's a large gap
                 for ra, dec in zip(sorted_ras, sorted_decs):
                     if prev_ra is not None:
                         dx = abs(ra - prev_ra)
@@ -41,11 +44,14 @@ class Renderer:
                 if current_segment:
                     segments.append(current_segment)
                 
+                # Convert each segment into screen coordinates
                 for seg in segments:
-                    ras_seg, decs_seg = np.array(seg).T
-                    x = WIDTH/2 + ((ras_seg - self.star_proj.view_ra + 180) % 360 - 180) * scale_inv
-                    y = HEIGHT/2 - (decs_seg - self.star_proj.view_dec) * scale_inv
+                    seg = np.array(seg)
+                    ras_seg, decs_seg = seg.T
+                    x = WIDTH / 2 + ((ras_seg - self.star_proj.view_ra + 180) % 360 - 180) * scale_inv
+                    y = HEIGHT / 2 - (decs_seg - self.star_proj.view_dec) * scale_inv
                     
+                    # Check for discontinuities in the screen coordinates
                     dx_screen = np.abs(np.diff(x))
                     valid_segments = dx_screen < WIDTH * 0.8
                     start = 0
@@ -53,12 +59,13 @@ class Renderer:
                         if not valid_segments[i]:
                             if start <= i:
                                 asterism_lines.append((x[start:i+1], y[start:i+1]))
-                            start = i+1
+                            start = i + 1
                     if start < len(x):
                         asterism_lines.append((x[start:], y[start:]))
             
             self.asterism_cache[cache_key] = asterism_lines
         
+        # Draw the computed asterism lines on the provided surface
         for x, y in self.asterism_cache[cache_key]:
             points = np.column_stack([x, y]).astype(int)
             if len(points) >= 2:

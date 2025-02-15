@@ -10,7 +10,7 @@ class StarMap:
         
         # Initialize view parameters
         self._calculate_view_params()
-        self._scale = self.min_scale
+        self._scale = self.min_scale * 0.8
         self._view_ra = self.map_center_ra
         self._view_dec = self.map_center_dec
         
@@ -48,7 +48,7 @@ class StarMap:
         
         map_width = self.max_ra - self.min_ra if self.max_ra > self.min_ra else (360 - self.min_ra) + self.max_ra
         map_height = self.max_dec - self.min_dec
-        self.min_scale = max(map_width/WIDTH, map_height/HEIGHT) * 1.05
+        self.min_scale = max(map_width/WIDTH, map_height/HEIGHT) * 0.8
         self.max_scale = self.min_scale / 50
 
     def _clamp_view(self):
