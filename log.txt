@@ -23,3 +23,10 @@ Goal: Add auxiliary lines of latitude and longitude
 Changing: display_sky.py
 Progress: Completed
 ========================================
+
+========================================
+Cheryl 2:56
+Goal: Link all stars in a constellation
+Changing: display_sky.py
+Progress: Not Started
+========================================
