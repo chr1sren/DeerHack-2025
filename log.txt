@@ -14,5 +14,12 @@ Here is where the log begins:
 Cheryl 0:35 
 Goal: Fix the rotation problem
 Changing: display_sky.py
-Progress: In Progress
+Progress: Completed
+========================================
+
+========================================
+Cheryl 2:49
+Goal: Add auxiliary lines of latitude and longitude
+Changing: display_sky.py
+Progress: Completed
 ========================================
