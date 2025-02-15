@@ -1,7 +1,6 @@
 import pygame
 import math
 import csv
-import gzip
 import os
 
 # ---------------------------
@@ -12,7 +11,7 @@ STAR_FILE = "constellations.csv"  # Star catalog file
 
 # Check if file exists
 if not os.path.exists(STAR_FILE):
-    print(f"Error: {STAR_FILE} not found! Download it from: https://github.com/astronexus/HYG-Database/raw/master/hyg_v38.csv.gz")
+    print(f"Error: {STAR_FILE} not found!")
     exit(1)
 
 # ---------------------------
