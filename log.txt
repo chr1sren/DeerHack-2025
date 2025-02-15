@@ -27,6 +27,6 @@ Progress: Completed
 ========================================
 Cheryl 2:56
 Goal: Link all stars in a constellation
-Changing: display_sky.py
-Progress: Not Started
+Changing: display_sky.py, load_data.py, constellation.py
+Progress: In Progress
 ========================================
