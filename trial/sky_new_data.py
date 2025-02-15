@@ -88,6 +88,7 @@ clock = pygame.time.Clock()
 
 # View parameters (in radians)
 view_ra = 0.0   # Right Ascension (center)
+# view_dec = math.radians(90)  # Declination (center)
 view_dec = 0.0  # Declination (center)
 pixel_scale = 250  # Zoom: pixels per radian
 
@@ -97,8 +98,8 @@ pixel_scale = 250  # Zoom: pixels per radian
 def project_star(ra, dec, ra0, dec0):
     """ Projects (ra, dec) onto a 2D plane using Gnomonic projection. """
     cos_c = math.sin(dec0) * math.sin(dec) + math.cos(dec0) * math.cos(dec) * math.cos(ra - ra0)
-    if cos_c <= 0:
-        return None  # Star is behind
+    # if cos_c <= 0:
+    #     return None  # Star is behind
     x = (math.cos(dec) * math.sin(ra - ra0)) / cos_c
     y = (math.cos(dec0) * math.sin(dec) - math.sin(dec0) * math.cos(dec) * math.cos(ra - ra0)) / cos_c
     return x, y
@@ -154,10 +155,23 @@ while running:
                 view_dec = max(-math.pi/2 + 0.01, min(math.pi/2 - 0.01, view_dec))
                 view_ra %= (2 * math.pi)  # Keep RA in [0, 2π]
 
+                # Special Case: Handle Dec exceeding ±90° to prevent locking at the poles
+                if view_dec > math.pi / 2:
+                    view_dec = math.pi - view_dec  # Reverse direction
+                    view_ra += math.pi  # Flip RA by 180°
+                elif view_dec < -math.pi / 2:
+                    view_dec = -math.pi - view_dec  # Reverse direction
+                    view_ra += math.pi  # Flip RA by 180°
+
+                view_ra %= (2 * math.pi)  # Keep RA in [0, 2π]
+
     # ---------------------------
     # DRAW FRAME
     # ---------------------------
     screen.fill((0, 0, 0))  # Black background
+
+    # # Draw red latitude and longitude lines
+    # draw_lat_lon_lines(screen)
 
     # Compute max projection distance
     max_proj = min(WIDTH, HEIGHT) / (2 * pixel_scale)
