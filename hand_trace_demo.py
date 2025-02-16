@@ -86,7 +86,7 @@ class HandGestureController:
 
             if len(grip_points) == 1:
                 if not self.mouse_down:
-                    pyautogui.mouseDown()
+                    pyautogui.mouseDown(button="right")
                     self.mouse_down = True
                 current_point = grip_points[0]
                 self.prev_drag_point, delta = self.process_drag(current_point, self.prev_drag_point)
@@ -96,14 +96,14 @@ class HandGestureController:
                 self.prev_zoom_distance = None
             elif len(grip_points) == 2:
                 if self.mouse_down:
-                    pyautogui.mouseUp()
+                    pyautogui.mouseUp(button="right")
                     self.mouse_down = False
                 gp1, gp2 = grip_points
                 current_zoom_distance, zoom_action = self.process_zoom(gp1, gp2, self.prev_zoom_distance)
                 if self.prev_zoom_distance is not None:
                     delta = current_zoom_distance - self.prev_zoom_distance
                     if abs(delta) > self.ZOOM_SMOOTHING_DELTA:
-                        pyautogui.scroll(int(delta))
+                        pyautogui.scroll(int(delta) * 3)
                 self.prev_zoom_distance = current_zoom_distance
                 text = zoom_action if zoom_action else "Pinch detected"
                 cv2.putText(frame, text, (10, 70),
@@ -112,7 +112,7 @@ class HandGestureController:
                 self.prev_drag_point = None
             else:
                 if self.mouse_down:
-                    pyautogui.mouseUp()
+                    pyautogui.mouseUp(button="right")
                     self.mouse_down = False
                 self.prev_drag_point = None
                 self.prev_zoom_distance = None
