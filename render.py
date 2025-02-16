@@ -229,27 +229,31 @@ class Renderer:
     def draw_selected_stars(self, surface, stars):
         if not stars:
             return
-
-        # Get the actual astronomical coordinates of all selected points
-        selected_points = np.array([(star[0][0], star[0][1]) for star in stars])
-        self.get_constellations(surface)
-
-        # Drawing logic
-        cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
-        for points in self.constellation_cache[cache_key]:
-            if len(points) >= 2:
-                for i in range(0, len(points) - 1, 2):
-                    p1 = points[i]
-                    p2 = points[i + 1]
-                    
-                    if p1 in selected_points and p2 in selected_points:
-                        pygame.draw.line(surface, SELECTED_LINE_COLOR, p1, p2, 3)
-
-        # Draw markers for the selected points (maintaining original logic)
+        
         ras = np.array([star[0][0] for star in stars])
         decs = np.array([star[0][1] for star in stars])
         x_coords = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
         y_coords = HEIGHT / 2 - (decs - self.star_proj.view_dec) / self.star_proj.scale
 
+        # Get the actual astronomical coordinates of all selected points
+        selected_points = np.column_stack((x_coords, y_coords)).astype(int)
+        self.get_constellations(surface)
+
+        # Drawing logic
+        if len(selected_points) >= 2:
+            cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
+            for points in self.constellation_cache[cache_key]:
+                if len(points) >= 2:
+                    for i in range(0, len(points) - 1, 2):
+                        p1 = points[i]
+                        p2 = points[i + 1]
+
+                        print(p1, p2, selected_points)
+                        
+                        if p1 in selected_points and p2 in selected_points:
+                            print("True")
+                            pygame.draw.line(surface, SELECTED_LINE_COLOR, p1, p2, 3)
+
+        # Draw markers for the selected points (maintaining original logic)
         for x, y in zip(x_coords, y_coords):
             pygame.draw.circle(surface, SELECTED_COLOR, (int(x), int(y)), 8)
