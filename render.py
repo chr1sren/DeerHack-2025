@@ -93,14 +93,14 @@ class Renderer:
                 decs = np.array([float(x) for x in row['dec'].replace('[', '').replace(']', '').split(',')])
                 
                 # Wrap and sort the RA values
-                wrapped_ras = self.star_proj._wrap_ra(ras)
-                sorted_idx = np.argsort(wrapped_ras)
-                sorted_ras = ras[sorted_idx]
-                sorted_decs = decs[sorted_idx]
+                # wrapped_ras = self.star_proj._wrap_ra(ras)
+                # sorted_idx = np.argsort(wrapped_ras)
+                # sorted_ras = ras[sorted_idx]
+                # sorted_decs = decs[sorted_idx]
                 
                 # Convert each segment into screen coordinates
-                x = WIDTH / 2 + ((sorted_ras - self.star_proj.view_ra + 180) % 360 - 180) * scale_inv
-                y = HEIGHT / 2 - (sorted_decs - self.star_proj.view_dec) * scale_inv
+                x = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) * scale_inv
+                y = HEIGHT / 2 - (decs - self.star_proj.view_dec) * scale_inv
                 
                 points = np.column_stack([x, y]).astype(int)
                 if len(points) >= 2:
@@ -126,26 +126,44 @@ class Renderer:
 
     def draw_constellation(self, surface, name):
         scale_inv = 1.0 / self.star_proj.scale
-
-        for index, row in self.star_proj.asterisms.iterrows():
-            ras = [float(x)*360/24 for x in row['ra'].replace('[', '').replace(']', '').split(',')]
-            decs = [float(x) for x in row['dec'].replace('[', '').replace(']', '').split(',')]
-            color = ASTERISM_COLOR
-            if row['zodiac'] == True: 
-                color = ZODIAC_COLOR
-            assert len(self.star_proj.asterisms)%2 == 0
-
-            # Wrap and sort the RA values
-            wrapped_ras = self.star_proj._wrap_ra(ras)
-            sorted_idx = np.argsort(wrapped_ras)
-            sorted_ras = ras[sorted_idx]
-            sorted_decs = decs[sorted_idx]
+        cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
+        
+        if cache_key not in self.constellation_cache:
+            constellation_lines = []
+            for index, row in self.star_proj.asterisms[self.star_proj.asterisms['name'] == name].iterrows():
+                # Convert the RA and Dec strings into numpy arrays
+                ras = np.array([float(x) * 360 / 24 for x in row['ra'].replace('[', '').replace(']', '').split(',')])
+                decs = np.array([float(x) for x in row['dec'].replace('[', '').replace(']', '').split(',')])
+                
+                # Wrap and sort the RA values
+                # wrapped_ras = self.star_proj._wrap_ra(ras)
+                # sorted_idx = np.argsort(wrapped_ras)
+                # sorted_ras = ras[sorted_idx]
+                # sorted_decs = decs[sorted_idx]
+                
+                # Convert each segment into screen coordinates
+                x = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) * scale_inv
+                y = HEIGHT / 2 - (decs - self.star_proj.view_dec) * scale_inv
+                
+                points = np.column_stack([x, y]).astype(int)
+                if len(points) >= 2:
+                    # Filter out segments with large gaps to avoid random lines
+                    dx_screen = np.abs(np.diff(x))
+                    valid_segments = dx_screen < WIDTH * 0.8
+                    start = 0
+                    for i in range(len(valid_segments)):
+                        if not valid_segments[i]:
+                            if start <= i:
+                                if len(points[start:i+1]) >= 2:
+                                    constellation_lines.append(points[start:i+1])
+                            start = i + 1
+                    if start < len(points) and len(points[start:]) >= 2:
+                        constellation_lines.append(points[start:])
             
-            # Convert each segment into screen coordinates
-            x = WIDTH / 2 + ((sorted_ras - self.star_proj.view_ra + 180) % 360 - 180) * scale_inv
-            y = HEIGHT / 2 - (sorted_decs - self.star_proj.view_dec) * scale_inv
-            
-            points = np.column_stack([x, y]).astype(int)
-
-            for n in range(int(len(self.star_proj.asterisms)/2)):
-                pygame.draw.lines(surface, color, False, points, 2)
+            self.constellation_cache[cache_key] = constellation_lines
+        
+        # Draw the computed constellation lines on the provided surface
+        for points in self.constellation_cache[cache_key]:
+            if len(points) >= 2:
+                print(points)
+                pygame.draw.lines(surface, CONSTELLATION_COLOR, False, points, 2)
