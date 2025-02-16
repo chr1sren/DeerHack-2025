@@ -189,84 +189,93 @@ class Renderer:
                     p2 = points[i + 1]
                     pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
 
-    def _get_stars_in_constellation(self, constellation):
-        print(constellation)
-        all_points = []
-        for index, row in self.star_proj.asterisms[self.star_proj.asterisms['name'] == constellation].iterrows():
-            # Convert the RA and Dec strings into numpy arrays
-            ras = np.array([float(x) * 360 / 24 for x in row['ra'].replace('[', '').replace(']', '').split(',')])
-            decs = np.array([float(x) for x in row['dec'].replace('[', '').replace(']', '').split(',')])
-            
-            # Convert each point into screen coordinates
-            x_coords = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
-            y_coords = HEIGHT / 2 - (decs - self.star_proj.view_dec) / self.star_proj.scale
-            points = np.column_stack((x_coords, y_coords)).astype(int)
-            all_points.append(points)
+    # def _get_stars_in_constellation(self, constellation):
+    #     """Get all star coordinates and adjacency relationships within the constellation."""
+    #     all_points = []
+    #     adjacency_list = []  # Store the adjacency relationships (i.e., consecutive points)
 
-        print(all_points)
-        
-        # Concatenate all points into a single numpy array.
-        if all_points:
-            return np.concatenate(all_points, axis=0)
-        else:
-            return np.empty((0, 2), dtype=int)
+    #     # Get all asterism data for the specified constellation
+    #     constellation_data = self.star_proj.asterisms[self.star_proj.asterisms['name'] == constellation]
+
+    #     for _, row in constellation_data.iterrows():
+    #         # Convert the raw RA and Dec strings into numpy arrays
+    #         ras = np.array([float(x) * 360 / 24 for x in row['ra'].strip('[]').split(',')])
+    #         decs = np.array([float(x) for x in row['dec'].strip('[]').split(',')])
+
+    #         # Convert astronomical coordinates to screen coordinates
+    #         x_coords = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
+    #         y_coords = HEIGHT / 2 - (decs - self.star_proj.view_dec) / self.star_proj.scale
+    #         points = np.column_stack((x_coords, y_coords)).astype(int)
+
+    #         # Create adjacency relationships (connect consecutive points)
+    #         for i in range(len(points) - 1):
+    #             adjacency_list.append((tuple(points[i]), tuple(points[i + 1])))
+
+    #         all_points.extend(points.tolist())
+
+    #     return np.array(all_points), adjacency_list
 
     def draw_selected_stars(self, surface, stars):
-        if stars is None or len(stars) == 0:
+        if not stars:
             return
 
-        cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
-        all_points = self._get_stars_in_constellation(stars[0][1])
-        
-        if cache_key not in self.selected_lines_cache:
-            self.selected_lines_cache[cache_key] = []
-        
-        if len(stars) >= 2:
-            for i in range(0, len(stars) - 1, 2):
-                line = (stars[i][0], stars[i + 1][0])
-                if line not in self.selected_lines_cache[cache_key]:
-                    self.selected_lines_cache[cache_key].append(line)
-        
-        # Draw all cached lines
-        for line in self.selected_lines_cache[cache_key]:
-            ras = np.array([line[0][0], line[1][0]])
-            decs = np.array([line[0][1], line[1][1]])
-            
-            x_coords = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
-            y_coords = HEIGHT / 2 - (decs - self.star_proj.view_dec) / self.star_proj.scale
+        # Get the actual astronomical coordinates of all selected points
+        selected_points = np.array([(star[0][0], star[0][1]) for star in stars])
+        constellation = stars[0][1]
 
-            selected_points = np.column_stack([x_coords, y_coords]).astype(int)
+        # Drawing logic
+        cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100), constellation)
+        for points in self.constellation_cache[cache_key]:
+                if len(points) >= 2:
+                    for i in range(0, len(points) - 1, 2):
+                        p1 = points[i]
+                        p2 = points[i + 1]
+                        index_p1 = np.where(np.all(selected_points == p1, axis=1))
+                        index_p2 = np.where(np.all(selected_points == p2, axis=1))
 
-        for i in range(len(all_points) - 1):
-            pt1 = all_points[i]
-            pt2 = all_points[i + 1]
+                        if index_p1
 
-            for s in selected_points:
-                x_coords = s[0]
-                dx_screen = np.abs(np.diff(x_coords))
-                if dx_screen[0] < WIDTH * 0.8:
-                    if np.allclose(pt1, s, atol=5):
-                        pygame.draw.line(surface, SELECTED_LINE_COLOR, tuple(pt1), tuple(s), 3)
-                    if np.allclose(pt2, s, atol=5):
-                        pygame.draw.line(surface, SELECTED_LINE_COLOR, tuple(pt2), tuple(s), 3)
-            
-            # Handle large gaps in RA values
-            dx_screen = np.abs(np.diff(x_coords))
-            if dx_screen[0] < WIDTH * 0.8:
-                pygame.draw.line(surface, SELECTED_LINE_COLOR, (x_coords[0], y_coords[0]), (x_coords[1], y_coords[1]), 3)
-        
-        # Draw selected stars
+        # for constellation in constellations:
+        #     # Get the screen coordinates and adjacency relationships for the given constellation
+        #     cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100), constellation)
+        #     if cache_key not in self.constellation_cache:
+        #         points, adjacency = self._get_stars_in_constellation(constellation)
+        #         self.constellation_cache[cache_key] = (points, adjacency)
+        #     else:
+        #         constellation_lines = self.constellation_cache[cache_key]
+
+        #     # Find the selected points that belong to the current constellation
+        #     constellation_stars = [star for star in stars if star[1] == constellation]
+        #     selected_points = np.array([(star[0][0], star[0][1]) for star in constellation_stars])
+
+        #     # Generate connected pairs (in astronomical coordinates)
+        #     connected_pairs = []
+        #     for (p1, p2) in adjacency:
+        #         # Check if both endpoints are among the selected points (using an absolute tolerance)
+        #         p1_in_selected = np.any(np.all(np.isclose(selected_points, p1, atol=10), axis=1))
+        #         p2_in_selected = np.any(np.all(np.isclose(selected_points, p2, atol=10), axis=1))
+
+        #         if p1_in_selected and p2_in_selected:
+        #             connected_pairs.append((p1, p2))
+
+        #     # Draw the connecting lines
+        #     for p1, p2 in connected_pairs:
+        #         # Convert to screen coordinates (if not already in screen coordinates)
+        #         x1 = WIDTH / 2 + ((p1[0] - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
+        #         y1 = HEIGHT / 2 - (p1[1] - self.star_proj.view_dec) / self.star_proj.scale
+        #         x2 = WIDTH / 2 + ((p2[0] - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
+        #         y2 = HEIGHT / 2 - (p2[1] - self.star_proj.view_dec) / self.star_proj.scale
+
+        #         # Check if the screen span is reasonable
+        #         if abs(x2 - x1) < WIDTH * 0.8:
+        #             pygame.draw.aaline(surface, SELECTED_LINE_COLOR,
+        #                             (int(x1), int(y1)), (int(x2), int(y2)), 3)
+
+        # Draw markers for the selected points (maintaining original logic)
         ras = np.array([star[0][0] for star in stars])
         decs = np.array([star[0][1] for star in stars])
-        
         x_coords = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
         y_coords = HEIGHT / 2 - (decs - self.star_proj.view_dec) / self.star_proj.scale
-        
-        valid = (x_coords >= 0) & (x_coords <= WIDTH) & (y_coords >= 0) & (y_coords <= HEIGHT)
-        x_vis = x_coords[valid]
-        y_vis = y_coords[valid]
-        
-        points = list(zip(x_vis, y_vis))
-        
-        for x, y in points:
-            pygame.draw.circle(surface, SELECTED_COLOR, (int(x), int(y)), 5)
+
+        for x, y in zip(x_coords, y_coords):
+            pygame.draw.circle(surface, SELECTED_COLOR, (int(x), int(y)), 8)
