@@ -165,5 +165,7 @@ class Renderer:
         # Draw the computed constellation lines on the provided surface
         for points in self.constellation_cache[cache_key]:
             if len(points) >= 2:
-                print(points)
-                pygame.draw.lines(surface, CONSTELLATION_COLOR, False, points, 2)
+                for i in range(0, len(points) - 1, 2):
+                    p1 = points[i]
+                    p2 = points[i + 1]
+                    pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
