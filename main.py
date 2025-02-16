@@ -78,7 +78,7 @@ def main():
         
         # Draw celestial elements
         renderer.draw_boundaries(back_buffer)  # Draw constellation boundaries
-        renderer.draw_constellations(back_buffer)  # Draw constellation lines
+        # renderer.draw_constellations(back_buffer)  # Draw constellation lines
         # renderer.draw_constellation(back_buffer, "Leo")  # Draw Leo constellation
         renderer.draw_stars(back_buffer)  # Draw visible stars
 

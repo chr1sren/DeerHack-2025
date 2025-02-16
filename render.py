@@ -151,12 +151,12 @@ class Renderer:
                         p2 = points[i + 1]
                         pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
 
-    def get_constellations(self, surface):
+    def get_constellations(self, surface, name):
         cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
         
         if cache_key not in self.constellation_cache:
             constellation_lines = []
-            for index, row in self.star_proj.asterisms.iterrows():
+            for index, row in self.star_proj.asterisms[self.star_proj.asterisms['name'] == name].iterrows():
                 # Convert the RA and Dec strings into numpy arrays
                 ras = np.array([float(x) * 360 / 24 for x in row['ra'].replace('[', '').replace(']', '').split(',')])
                 decs = np.array([float(x) for x in row['dec'].replace('[', '').replace(']', '').split(',')])
@@ -183,10 +183,11 @@ class Renderer:
         
         # Draw the computed constellation lines on the provided surface
         for points in self.constellation_cache[cache_key]:
-                if len(points) >= 2:
-                    for i in range(0, len(points) - 1, 2):
-                        p1 = points[i]
-                        p2 = points[i + 1]
+            if len(points) >= 2:
+                for i in range(0, len(points) - 1, 2):
+                    p1 = points[i]
+                    p2 = points[i + 1]
+                    pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
 
     def draw_constellation(self, surface, name):
         cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
@@ -237,7 +238,7 @@ class Renderer:
 
         # Get the actual astronomical coordinates of all selected points
         selected_points = np.column_stack((x_coords, y_coords)).astype(int)
-        self.get_constellations(surface)
+        self.get_constellations(surface, stars[0][1])
 
         # Drawing logic
         if len(selected_points) >= 2:
