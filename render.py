@@ -7,6 +7,7 @@ class Renderer:
         self.star_proj = star_projection
         self.asterism_cache = {}
         self.constellation_cache = {}
+        self.selected_lines_cache = {}  # Cache for selected lines
 
     def draw_boundaries(self, surface):
         scale_inv = 1.0 / self.star_proj.scale
@@ -189,9 +190,31 @@ class Renderer:
                     pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
 
     def draw_selected_stars(self, surface, stars):
-        if not stars:
-            return
+        cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
         
+        if cache_key not in self.selected_lines_cache:
+            self.selected_lines_cache[cache_key] = []
+        
+        if len(stars) >= 2:
+            for i in range(0, len(stars) - 1, 2):
+                line = (stars[i], stars[i + 1])
+                if line not in self.selected_lines_cache[cache_key]:
+                    self.selected_lines_cache[cache_key].append(line)
+        
+        # Draw all cached lines
+        for line in self.selected_lines_cache[cache_key]:
+            ras = np.array([line[0][0], line[1][0]])
+            decs = np.array([line[0][1], line[1][1]])
+            
+            x_coords = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
+            y_coords = HEIGHT / 2 - (decs - self.star_proj.view_dec) / self.star_proj.scale
+            
+            # Handle large gaps in RA values
+            dx_screen = np.abs(np.diff(x_coords))
+            if dx_screen[0] < WIDTH * 0.8:
+                pygame.draw.line(surface, SELECTED_LINE_COLOR, (x_coords[0], y_coords[0]), (x_coords[1], y_coords[1]), 3)
+        
+        # Draw selected stars
         ras = np.array([star[0] for star in stars])
         decs = np.array([star[1] for star in stars])
         
@@ -204,11 +227,5 @@ class Renderer:
         
         points = list(zip(x_vis, y_vis))
         
-        if len(points) >= 2:
-            for i in range(0, len(points) - 1, 2):
-                p1 = points[i]
-                p2 = points[i + 1]
-                pygame.draw.line(surface, SELECTED_LINE_COLOR, p1, p2, 3)
-            
         for x, y in points:
             pygame.draw.circle(surface, SELECTED_COLOR, (int(x), int(y)), 5)
