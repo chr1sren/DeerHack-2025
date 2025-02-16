@@ -7,7 +7,6 @@ class Renderer:
         self.star_proj = star_projection
         self.asterism_cache = {}
         self.constellation_cache = {}
-        self.selected_lines_cache = {}  # Cache for selected lines
 
     def draw_boundaries(self, surface):
         scale_inv = 1.0 / self.star_proj.scale
