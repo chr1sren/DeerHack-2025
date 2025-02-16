@@ -113,7 +113,6 @@ class Renderer:
             pygame.draw.circle(surface, color, (int(x), int(y)), size)
 
     def draw_constellations(self, surface):
-        scale_inv = 1.0 / self.star_proj.scale
         cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
         
         if cache_key not in self.constellation_cache:
@@ -123,15 +122,8 @@ class Renderer:
                 ras = np.array([float(x) * 360 / 24 for x in row['ra'].replace('[', '').replace(']', '').split(',')])
                 decs = np.array([float(x) for x in row['dec'].replace('[', '').replace(']', '').split(',')])
                 
-                # Wrap and sort the RA values
-                # wrapped_ras = self.star_proj._wrap_ra(ras)
-                # sorted_idx = np.argsort(wrapped_ras)
-                # sorted_ras = ras[sorted_idx]
-                # sorted_decs = decs[sorted_idx]
-                
                 # Convert each segment into screen coordinates
-                x = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) * scale_inv
-                y = HEIGHT / 2 - (decs - self.star_proj.view_dec) * scale_inv
+                x, y = self.star_proj.convert_coordinates(ras, decs)
                 
                 points = np.column_stack([x, y]).astype(int)
                 if len(points) >= 2:
@@ -159,7 +151,6 @@ class Renderer:
                         pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
 
     def draw_constellation(self, surface, name):
-        scale_inv = 1.0 / self.star_proj.scale
         cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
         
         if cache_key not in self.constellation_cache:
@@ -169,15 +160,8 @@ class Renderer:
                 ras = np.array([float(x) * 360 / 24 for x in row['ra'].replace('[', '').replace(']', '').split(',')])
                 decs = np.array([float(x) for x in row['dec'].replace('[', '').replace(']', '').split(',')])
                 
-                # Wrap and sort the RA values
-                # wrapped_ras = self.star_proj._wrap_ra(ras)
-                # sorted_idx = np.argsort(wrapped_ras)
-                # sorted_ras = ras[sorted_idx]
-                # sorted_decs = decs[sorted_idx]
-                
                 # Convert each segment into screen coordinates
-                x = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) * scale_inv
-                y = HEIGHT / 2 - (decs - self.star_proj.view_dec) * scale_inv
+                x, y = self.star_proj.convert_coordinates(ras, decs)
                 
                 points = np.column_stack([x, y]).astype(int)
                 if len(points) >= 2:
@@ -203,3 +187,40 @@ class Renderer:
                     p1 = points[i]
                     p2 = points[i + 1]
                     pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
+
+    def draw_selected_stars(self, surface, stars):
+        cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
+        
+        if cache_key not in self.constellation_cache:
+            constellation_lines = []
+            for star in stars:
+                x, y = star
+                
+                points = np.column_stack([x, y]).astype(int)
+                if len(points) >= 2:
+                    # Filter out segments with large gaps to avoid random lines
+                    dx_screen = np.abs(np.diff(x))
+                    valid_segments = dx_screen < WIDTH * 0.8
+                    start = 0
+                    for i in range(len(valid_segments)):
+                        if not valid_segments[i]:
+                            if start <= i:
+                                if len(points[start:i+1]) >= 2:
+                                    constellation_lines.append(points[start:i+1])
+                            start = i + 1
+                    if start < len(points) and len(points[start:]) >= 2:
+                        constellation_lines.append(points[start:])
+            
+            self.constellation_cache[cache_key] = constellation_lines
+        
+        # Draw the computed constellation lines on the provided surface
+        for points in self.constellation_cache[cache_key]:
+                if len(points) >= 2:
+                    for i in range(0, len(points) - 1, 2):
+                        p1 = points[i]
+                        p2 = points[i + 1]
+                        pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
+
+        for point in stars:
+            pygame.draw.circle(surface, SELECTED_COLOR, point, 5)
+        

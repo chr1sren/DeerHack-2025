@@ -2,6 +2,7 @@ import pygame
 from config import *
 from star_projection import StarMap
 from render import Renderer
+from selection import find_nearest_star
 
 def main():
     pygame.init()
@@ -34,21 +35,28 @@ def main():
             # Mouse event handling
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button
+                    selected = find_nearest_star(star_proj, event.pos[0], event.pos[1])
+                    if selected is not None:
+                        star_proj.selected_stars.append(selected)
+                
+                elif event.button == 2:  # Right mouse button
                     dragging = True
                     last_pos = event.pos
                     renderer.asterism_cache.clear()  # Clear cached asterism paths
                     renderer.constellation_cache.clear()  # Clear cached constellation paths
+
                 elif event.button == 4:  # Mouse wheel up (zoom in)
                     star_proj.scale = max(star_proj.scale * 0.9, star_proj.max_scale)
                     renderer.asterism_cache.clear()  # Clear cached asterism paths
                     renderer.constellation_cache.clear()  # Clear cached constellation paths
+
                 elif event.button == 5:  # Mouse wheel down (zoom out)
                     star_proj.scale = min(star_proj.scale * 1.1, star_proj.min_scale)
                     renderer.asterism_cache.clear()  # Clear cached asterism paths
                     renderer.constellation_cache.clear()  # Clear cached constellation paths
             
             elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:  # Left button release
+                if event.button == 2:  # Left button release
                     dragging = False
             
             elif event.type == pygame.MOUSEMOTION and dragging:
@@ -70,6 +78,9 @@ def main():
         renderer.draw_constellations(back_buffer)  # Draw constellation lines
         # renderer.draw_constellation(back_buffer, "Leo")  # Draw Leo constellation
         renderer.draw_stars(back_buffer)  # Draw visible stars
+
+        # Draw selected stars
+        renderer.draw_selected_stars(back_buffer, star_proj.selected_stars)
         
         # Update display
         screen.blit(back_buffer, (0, 0))

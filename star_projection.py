@@ -13,6 +13,7 @@ class StarMap:
         self._scale = self.min_scale * 0.8
         self._view_ra = self.map_center_ra
         self._view_dec = self.map_center_dec
+        self.selected_stars = []
         
         # Performance optimizations
         self.visible_stars = None
@@ -83,6 +84,13 @@ class StarMap:
         base_ra = self.view_ra
         return np.where(ras - base_ra > 180, ras - 360,
                       np.where(ras - base_ra < -180, ras + 360, ras))
+    
+    def convert_coordinates(self, ras, decs):
+        """Convert RA and Dec to screen coordinates"""
+        scale_inv = 1.0 / self._scale
+        x = WIDTH / 2 + ((ras - self._view_ra + 180) % 360 - 180) * scale_inv
+        y = HEIGHT / 2 - (decs - self._view_dec) * scale_inv
+        return x, y
 
     @property
     def view_ra(self):
