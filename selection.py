@@ -20,7 +20,7 @@ def find_nearest_star(star_proj, mouse_x, mouse_y):
     
         if distances[min_idx] < 10:  # Threshold for selection
             constellation = row['name']
-            print(constellation)
-            print(ras[min_idx], decs[min_idx])
+            #print(constellation)
+            #print(ras[min_idx], decs[min_idx])
             return (ras[min_idx], decs[min_idx]), constellation
     return None, None

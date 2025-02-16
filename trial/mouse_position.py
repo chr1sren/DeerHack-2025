@@ -12,7 +12,7 @@ def plot_unit_circle():
 
 def mouse_move(event):
     x, y = event.xdata, event.ydata
-    print(x, y)
+    #print(x, y)
 
 
 plt.connect('motion_notify_event', mouse_move)

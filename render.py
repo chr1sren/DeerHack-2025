@@ -249,12 +249,30 @@ class Renderer:
                         p1 = points[i]
                         p2 = points[i + 1]
 
-                        print(p1, p2, selected_points)
+                        #print(p1, p2, selected_points)
                         
                         if p1 in selected_points and p2 in selected_points:
-                            print("True")
+                            #print("True")
                             pygame.draw.line(surface, SELECTED_LINE_COLOR, p1, p2, 3)
 
         # Draw markers for the selected points (maintaining original logic)
         for x, y in zip(x_coords, y_coords):
             pygame.draw.circle(surface, SELECTED_COLOR, (int(x), int(y)), 8)
+        
+        # Check if the constellation is fully selected and draw the name
+        if len(selected_points) >= 2:
+            all_selected = True
+            for points in self.constellation_cache[cache_key]:
+                for i in range(0, len(points) - 1, 2):
+                    p1 = points[i]
+                    p2 = points[i + 1]
+                    if not (p1 in selected_points and p2 in selected_points):
+                        all_selected = False
+                        break
+                if not all_selected:
+                    break
+            
+            if all_selected:
+                font = pygame.font.SysFont('Arial', 24)
+                text = font.render(stars[0][1], True, (255, 255, 255))
+                surface.blit(text, (x_coords[0] + 10, y_coords[0] - 10))

@@ -35,4 +35,4 @@ with open(CONSTELLATION_FILE, 'w') as file:
         if star1 in stars and star2 in stars:
             file.write(f"{star1} {star2}\n")
 
-print(f"Constellation lines written to {CONSTELLATION_FILE}")
+#print(f"Constellation lines written to {CONSTELLATION_FILE}")
