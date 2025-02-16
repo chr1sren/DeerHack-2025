@@ -37,10 +37,15 @@ def main():
                     dragging = True
                     last_pos = event.pos
                     renderer.asterism_cache.clear()  # Clear cached asterism paths
+                    renderer.constellation_cache.clear()  # Clear cached constellation paths
                 elif event.button == 4:  # Mouse wheel up (zoom in)
                     star_proj.scale = max(star_proj.scale * 0.9, star_proj.max_scale)
+                    renderer.asterism_cache.clear()  # Clear cached asterism paths
+                    renderer.constellation_cache.clear()  # Clear cached constellation paths
                 elif event.button == 5:  # Mouse wheel down (zoom out)
                     star_proj.scale = min(star_proj.scale * 1.1, star_proj.min_scale)
+                    renderer.asterism_cache.clear()  # Clear cached asterism paths
+                    renderer.constellation_cache.clear()  # Clear cached constellation paths
             
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:  # Left button release
@@ -55,15 +60,15 @@ def main():
                 star_proj.view_ra -= dx * star_proj.scale * drag_sensitivity
                 star_proj.view_dec += dy * star_proj.scale * drag_sensitivity
                 renderer.asterism_cache.clear()  # Invalidate cached paths
+                renderer.constellation_cache.clear()  # Invalidate cached paths
 
         # Rendering pipeline
         back_buffer.fill(BACKGROUND_COLOR)  # Clear background
         
         # Draw celestial elements
-        # renderer.draw_constellation(back_buffer, "Libra")
-        renderer.draw_asterisms(back_buffer)  # Draw constellation lines
-        renderer.draw_stars(back_buffer)      # Draw visible stars
-        # renderer.draw_constellation(back_buffer, "Ursa Major")  # Example constellation
+        renderer.draw_boundaries(back_buffer)  # Draw constellation boundaries
+        renderer.draw_constellations(back_buffer)  # Draw constellation lines
+        renderer.draw_stars(back_buffer)  # Draw visible stars
         
         # Update display
         screen.blit(back_buffer, (0, 0))
