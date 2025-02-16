@@ -189,15 +189,41 @@ class Renderer:
                     p2 = points[i + 1]
                     pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
 
+    def _get_stars_in_constellation(self, constellation):
+        print(constellation)
+        all_points = []
+        for index, row in self.star_proj.asterisms[self.star_proj.asterisms['name'] == constellation].iterrows():
+            # Convert the RA and Dec strings into numpy arrays
+            ras = np.array([float(x) * 360 / 24 for x in row['ra'].replace('[', '').replace(']', '').split(',')])
+            decs = np.array([float(x) for x in row['dec'].replace('[', '').replace(']', '').split(',')])
+            
+            # Convert each point into screen coordinates
+            x_coords = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
+            y_coords = HEIGHT / 2 - (decs - self.star_proj.view_dec) / self.star_proj.scale
+            points = np.column_stack((x_coords, y_coords)).astype(int)
+            all_points.append(points)
+
+        print(all_points)
+        
+        # Concatenate all points into a single numpy array.
+        if all_points:
+            return np.concatenate(all_points, axis=0)
+        else:
+            return np.empty((0, 2), dtype=int)
+
     def draw_selected_stars(self, surface, stars):
+        if stars is None or len(stars) == 0:
+            return
+
         cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
+        all_points = self._get_stars_in_constellation(stars[0][1])
         
         if cache_key not in self.selected_lines_cache:
             self.selected_lines_cache[cache_key] = []
         
         if len(stars) >= 2:
             for i in range(0, len(stars) - 1, 2):
-                line = (stars[i], stars[i + 1])
+                line = (stars[i][0], stars[i + 1][0])
                 if line not in self.selected_lines_cache[cache_key]:
                     self.selected_lines_cache[cache_key].append(line)
         
@@ -208,6 +234,21 @@ class Renderer:
             
             x_coords = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
             y_coords = HEIGHT / 2 - (decs - self.star_proj.view_dec) / self.star_proj.scale
+
+            selected_points = np.column_stack([x_coords, y_coords]).astype(int)
+
+        for i in range(len(all_points) - 1):
+            pt1 = all_points[i]
+            pt2 = all_points[i + 1]
+
+            for s in selected_points:
+                x_coords = s[0]
+                dx_screen = np.abs(np.diff(x_coords))
+                if dx_screen[0] < WIDTH * 0.8:
+                    if np.allclose(pt1, s, atol=5):
+                        pygame.draw.line(surface, SELECTED_LINE_COLOR, tuple(pt1), tuple(s), 3)
+                    if np.allclose(pt2, s, atol=5):
+                        pygame.draw.line(surface, SELECTED_LINE_COLOR, tuple(pt2), tuple(s), 3)
             
             # Handle large gaps in RA values
             dx_screen = np.abs(np.diff(x_coords))
@@ -215,8 +256,8 @@ class Renderer:
                 pygame.draw.line(surface, SELECTED_LINE_COLOR, (x_coords[0], y_coords[0]), (x_coords[1], y_coords[1]), 3)
         
         # Draw selected stars
-        ras = np.array([star[0] for star in stars])
-        decs = np.array([star[1] for star in stars])
+        ras = np.array([star[0][0] for star in stars])
+        decs = np.array([star[0][1] for star in stars])
         
         x_coords = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
         y_coords = HEIGHT / 2 - (decs - self.star_proj.view_dec) / self.star_proj.scale

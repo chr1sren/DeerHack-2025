@@ -35,9 +35,12 @@ def main():
             # Mouse event handling
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button
-                    selected = find_nearest_star(star_proj, event.pos[0], event.pos[1])
-                    if selected is not None:
-                        star_proj.selected_stars.append(selected)
+                    selected, constellation = find_nearest_star(star_proj, event.pos[0], event.pos[1])
+                    if selected is not None and constellation is not None:
+                        if len(star_proj.selected_stars) > 0 and constellation == star_proj.selected_stars[-1][1]:
+                            star_proj.selected_stars.append([selected, constellation])
+                        else:
+                            star_proj.selected_stars = [[selected, constellation]]  # Restart selection
                 
                 elif event.button == 3:  # Right mouse button
                     dragging = True

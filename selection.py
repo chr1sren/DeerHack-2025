@@ -7,8 +7,7 @@ def euclidean_distance(x1, y1, x2, y2):
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
 def find_nearest_star(star_proj, mouse_x, mouse_y):
-    constellation_lines = []
-    for index, row in star_proj.asterisms.iterrows():
+    for _, row in star_proj.asterisms.iterrows():
         # Convert the RA and Dec strings into numpy arrays
         ras = np.array([float(x) * 360 / 24 for x in row['ra'].replace('[', '').replace(']', '').split(',')])
         decs = np.array([float(x) for x in row['dec'].replace('[', '').replace(']', '').split(',')])
@@ -20,5 +19,8 @@ def find_nearest_star(star_proj, mouse_x, mouse_y):
         min_idx = np.argmin(distances)
     
         if distances[min_idx] < 10:  # Threshold for selection
-            return (ras[min_idx], decs[min_idx])
-    return None
+            constellation = row['name']
+            print(constellation)
+            print(ras[min_idx], decs[min_idx])
+            return (ras[min_idx], decs[min_idx]), constellation
+    return None, None
