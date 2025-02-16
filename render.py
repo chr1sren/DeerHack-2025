@@ -202,5 +202,13 @@ class Renderer:
         x_vis = x_coords[valid]
         y_vis = y_coords[valid]
         
-        for x, y in zip(x_vis, y_vis):
+        points = list(zip(x_vis, y_vis))
+        
+        if len(points) >= 2:
+            for i in range(0, len(points) - 1, 2):
+                p1 = points[i]
+                p2 = points[i + 1]
+                pygame.draw.line(surface, SELECTED_LINE_COLOR, p1, p2, 3)
+            
+        for x, y in points:
             pygame.draw.circle(surface, SELECTED_COLOR, (int(x), int(y)), 5)
