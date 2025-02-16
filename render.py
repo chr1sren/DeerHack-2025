@@ -189,38 +189,18 @@ class Renderer:
                     pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
 
     def draw_selected_stars(self, surface, stars):
-        cache_key = (int(self.star_proj.view_ra), int(self.star_proj.scale * 100))
+        if not stars:
+            return
         
-        if cache_key not in self.constellation_cache:
-            constellation_lines = []
-            for star in stars:
-                x, y = star
-                
-                points = np.column_stack([x, y]).astype(int)
-                if len(points) >= 2:
-                    # Filter out segments with large gaps to avoid random lines
-                    dx_screen = np.abs(np.diff(x))
-                    valid_segments = dx_screen < WIDTH * 0.8
-                    start = 0
-                    for i in range(len(valid_segments)):
-                        if not valid_segments[i]:
-                            if start <= i:
-                                if len(points[start:i+1]) >= 2:
-                                    constellation_lines.append(points[start:i+1])
-                            start = i + 1
-                    if start < len(points) and len(points[start:]) >= 2:
-                        constellation_lines.append(points[start:])
-            
-            self.constellation_cache[cache_key] = constellation_lines
+        ras = np.array([star[0] for star in stars])
+        decs = np.array([star[1] for star in stars])
         
-        # Draw the computed constellation lines on the provided surface
-        for points in self.constellation_cache[cache_key]:
-                if len(points) >= 2:
-                    for i in range(0, len(points) - 1, 2):
-                        p1 = points[i]
-                        p2 = points[i + 1]
-                        pygame.draw.line(surface, CONSTELLATION_COLOR, p1, p2, 2)
-
-        for point in stars:
-            pygame.draw.circle(surface, SELECTED_COLOR, point, 5)
+        x_coords = WIDTH / 2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180) / self.star_proj.scale
+        y_coords = HEIGHT / 2 - (decs - self.star_proj.view_dec) / self.star_proj.scale
         
+        valid = (x_coords >= 0) & (x_coords <= WIDTH) & (y_coords >= 0) & (y_coords <= HEIGHT)
+        x_vis = x_coords[valid]
+        y_vis = y_coords[valid]
+        
+        for x, y in zip(x_vis, y_vis):
+            pygame.draw.circle(surface, SELECTED_COLOR, (int(x), int(y)), 5)

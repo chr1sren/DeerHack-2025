@@ -39,7 +39,7 @@ def main():
                     if selected is not None:
                         star_proj.selected_stars.append(selected)
                 
-                elif event.button == 2:  # Right mouse button
+                elif event.button == 3:  # Right mouse button
                     dragging = True
                     last_pos = event.pos
                     renderer.asterism_cache.clear()  # Clear cached asterism paths
@@ -56,7 +56,7 @@ def main():
                     renderer.constellation_cache.clear()  # Clear cached constellation paths
             
             elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 2:  # Left button release
+                if event.button == 3:  # Left button release
                     dragging = False
             
             elif event.type == pygame.MOUSEMOTION and dragging:
