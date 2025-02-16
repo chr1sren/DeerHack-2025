@@ -35,8 +35,9 @@ class Renderer:
             self.asterism_cache[cache_key] = asterism_points
         
         # Draw the computed asterism boundaries on the provided surface
+        gray_color = (128, 128, 128)
         for x, y in self.asterism_cache[cache_key]:
-            pygame.draw.circle(surface, ASTERISM_COLOR, (int(x), int(y)), 2)
+            pygame.draw.circle(surface, gray_color, (int(x), int(y)), 1)
 
     def draw_constellation(self, surface, name):
         constellation = self.star_proj.constellations[self.star_proj.constellations['name'] == name]
@@ -68,18 +69,48 @@ class Renderer:
         ras = stars['ra_deg'].values
         decs = stars['dec'].values
         mags = stars['mag'].values
-        
+
         x_coords = WIDTH/2 + ((ras - self.star_proj.view_ra + 180) % 360 - 180)/self.star_proj.scale
         y_coords = HEIGHT/2 - (decs - self.star_proj.view_dec)/self.star_proj.scale
-        
+
         valid = (x_coords >= 0) & (x_coords <= WIDTH) & (y_coords >= 0) & (y_coords <= HEIGHT)
         x_vis = x_coords[valid]
         y_vis = y_coords[valid]
         mags_vis = mags[valid]
+
+        # Map magnitude to size.
+        # This mapping makes brighter stars (lower mag) appear larger.
+        sizes = np.maximum(1, (6 - mags_vis).astype(int))
+
+        def compute_color(ci):
+            if ci is None:
+                return (255, 255, 255)
+            try:
+                # Using an approximate formula to compute temperature from color index.
+                temperature = 4600 * (1/(0.92 * ci + 1.7) + 1/(0.92 * ci + 0.62))
+            except Exception:
+                return (255, 255, 255)
+            # More vibrant color mapping:
+            if temperature >= 10000:
+                return (155, 176, 255)  # Bluish
+            elif temperature >= 7500:
+                return (170, 190, 255)  # Soft blue
+            elif temperature >= 6000:
+                return (255, 255, 255)  # White
+            elif temperature >= 5000:
+                return (255, 244, 214)  # Warm white
+            else:
+                return (255, 204, 111)  # Reddish
+            
+        if 'ci' in stars.columns:
+            ci_all = stars['ci'].values
+            ci_vis = ci_all[valid]
+        else:
+            ci_vis = [None] * len(x_vis)
         
-        sizes = np.maximum(1, (3 - mags_vis/2).astype(int))
-        for x, y, size in zip(x_vis, y_vis, sizes):
-            pygame.draw.circle(surface, (255,255,255), (int(x), int(y)), size)
+        for x, y, size, ci in zip(x_vis, y_vis, sizes, ci_vis):
+            color = compute_color(ci)
+            pygame.draw.circle(surface, color, (int(x), int(y)), size)
 
     def draw_constellations(self, surface):
         scale_inv = 1.0 / self.star_proj.scale
